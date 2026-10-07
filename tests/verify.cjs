@@ -58,4 +58,20 @@ const rect=vm.runInContext('sectionModel(mat)',ctx);ctx.model=rect;
 const stressPoint=vm.runInContext('sectionPoint(model,12.5,5,.2,1)',ctx);close(stressPoint.sigma,1/rect.A-12.5*.2/rect.I,'combined point stress');close(vm.runInContext('sectionPoint(model,12.5,5,0).tau',ctx),1.5*5/rect.A,'neutral axis shear');
 close(vm.runInContext('minimumRectangleWidth(analyze(i),.4,3000,1000,true)',ctx),6*12.5/(3000*.4**2),'minimum rectangular width');
 const strain=vm.runInContext('curvatureFromStrain(.001,.1,1)',ctx);close(strain.kappa,-.01,'strain curvature');close(strain.radius,100,'strain radius');close(strain.sagitta,.25/(100+Math.sqrt(10000-.25)),'strain sagitta');
+
+// References checked against equilibrium and independent closed-form values.
+const workspace=fs.readFileSync(require('path').join(require('path').dirname(file),'workspace.js'),'utf8');
+for(const name of ['checkProject','loadCases']){const line=workspace.split(/\r?\n/).find(s=>s.startsWith('function '+name+'('));vm.runInContext(line,ctx);}
+const rs=workspace.indexOf('const referenceModels='),re=workspace.indexOf('\n];',rs)+3;vm.runInContext(workspace.slice(rs,re),ctx);
+const fixtures=vm.runInContext('referenceModels',ctx);const expected=[[52,58,67.6],[73.3333333333333,56.6666666666667,60],[.625,.375,.75],[9,null,19.5],[35,45,40.5],[5,null,11],[13.999999999999998,33.5,32],[48,48,96],[90,50,81]];
+for(let j=0;j<fixtures.length;j++){const f=fixtures[j],i=input(f.L,f.s.map(([t,x,angle])=>({t,x,angle})),(f.p||[]).map(([x,F])=>({x,F})),(f.w||[]).map(([s,e,w1,w2])=>({s,e,w1,w2})),(f.m||[]).map(([x,C])=>({x,C})));const v=run(i,24200);close(v.r.reactions[0].Rv,expected[j][0],f.name+' reaction');if(expected[j][1]!==null)close(v.r.reactions[1].Rv,expected[j][1],f.name+' reaction2');close(v.r.Mabs.abs,expected[j][2],f.name+' moment');if(j===0){close(v.d.max.abs,.007477512807,f.name+' exact deflection',1e-8);close(v.d.max.x,2.5456528,f.name+' max location',1e-7);}ctx.fixture=i;ctx.project={schema:'hrtx-beam-project',version:1,meta:{name:f.name},units:{F:'kN',L:'m'},settings:{},model:i};vm.runInContext('checkProject(project)',ctx);count++;if(i.points.length){const c=vm.runInContext('loadCases("base: P1=1",fixture)',ctx);close(c[0].model.points[0].F,i.points[0].F,'case base');}else{assert.throws(()=>vm.runInContext('loadCases("invalid: P1=1",fixture)',ctx));count++;}}
+ctx.fixture=input(5,simple(5),[{x:2,F:10}],[{s:0,e:5,w1:2,w2:4}],[{x:3,C:5}]);const scaled=vm.runInContext('loadCases("reverse: P1=-2,W1=0,M1=1.5",fixture)',ctx);close(scaled[0].model.points[0].F,-20,'case reverse');close(scaled[0].model.dists[0].w2,0,'case zero');close(scaled[0].model.moms[0].C,7.5,'case couple');close(ctx.fixture.points[0].F,10,'original unchanged');
+for(const text of ['bad: P2=1','bad: P1=1,P1=2','bad: P1=101','bad: P1=NaN','no colon']){ctx.caseText=text;assert.throws(()=>vm.runInContext('loadCases(caseText,fixture)',ctx));count++;}
+ctx.project.model.L=-1;assert.throws(()=>vm.runInContext('checkProject(project)',ctx));count++;
+
+// Practice C5-2 5.58 and 5.62: independent Q/Ib checks.
+vm.runInContext("UNIT={F:'lb',L:'in'}",ctx);ctx.mat={sec:'rhs',b:8,h:10,thk:1};const hollow=vm.runInContext('sectionModel(mat)',ctx);ctx.shape=hollow;close(vm.runInContext('sectionPoint(shape,0,1800,0).tau',ctx),1800*52/(((8*10**3-6*8**3)/12)*2),'P5.58 neutral shear');close(vm.runInContext('sectionPoint(shape,0,1800,4).tau',ctx),1800*36/(((8*10**3-6*8**3)/12)*2),'P5.58 web flange interface');
+vm.runInContext("UNIT={F:'kN',L:'m'}",ctx);ctx.mat={sec:'ibeam',b:.12,h:.2,tw:.02,tf:.02};ctx.shape=vm.runInContext('sectionModel(mat)',ctx);close(vm.runInContext('sectionPoint(shape,0,100,0).tau',ctx),100*(.12*.02*.09+.02*.08**2/2)/((.12*.2**3/12-.1*.16**3/12)*.02),'P5.62 neutral shear',1e-4);
 const result={assertions:count,status:'passed',cases:['simple','cantilever','fixed','propped','continuous','triangular','partial distributed','couple','load reversal','SI/US','near coincident loads','compatibility','invalid inputs','section properties','load magnitude','load capacity','point stress','minimum width','strain curvature']};console.log(JSON.stringify(result));
+
+

@@ -146,7 +146,8 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline-color:#b4232f
 [data-theme=dark] .beam-option input:checked+span b{color:#f4a2aa}[data-theme=dark] .beam-option input:checked+span svg{stroke:#e48a94}
 [data-theme=dark] #calc,[data-theme=dark] #designNow,[data-theme=dark] #toDesign{background:#b4232f;color:#fff}
 [data-theme=dark] #calc:hover,[data-theme=dark] #designNow:hover,[data-theme=dark] #toDesign:hover{background:#c82d3a}
-</style></head><body>
+</style><link rel="stylesheet" href="workspace.css">
+</head><body>
 <aside class="sidebar">
   <a class="brand" href="#" onclick="switchTab(1); return false"><span class="brand-mark">b<span>·</span></span><span class="brand-wordmark">HRTX<span class="brand-suffix">/ beam workspace</span></span></a>
   <div class="sidebar-label">พื้นที่ทำงาน</div>
@@ -2021,4 +2022,5 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline-color:#b4232f
     syncRelevantFields();$('strainNow').addEventListener('click',strainAction);$('widthNow').addEventListener('click',widthAction);$('pointStressNow').addEventListener('click',pointStressAction);$('capacityNow').addEventListener('click',capacityAction);syncSpecificSection();
     preview();
   </script>
+<script src="workspace.js"></script>
 </body></html>

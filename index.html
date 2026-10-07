@@ -688,7 +688,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline-color:#b4232f
     function exportBeamJSON() {
       if(!last){$('err').hidden=false;$('err').textContent='วิเคราะห์คานก่อนส่งออก';return;}
       const r=last.res,d=r.deflection;
-      downloadText('hrtx-beam-results.json',JSON.stringify({schema:'hrtx-beam-results',version:2,units:{force:UNIT.F,length:UNIT.L},model:last.inp,results:{reactions:r.reactions,shearMax:r.Vmax,momentMax:r.Mabs,deflection:d?{max:d.max,allowed:d.allowed,utilization:d.utilization}:null,accuracy:r.accuracy},assumptions:'Euler–Bernoulli; constant EI; linear elastic; small deflection'},null,2),'application/json');
+      downloadText('hrtx-beam-results.json',JSON.stringify({schema:'hrtx-beam-results',version:2,units:{force:UNIT.F,length:UNIT.L},model:last.inp,results:{reactions:r.reactions,shearMax:r.Vmax,momentMax:r.Mabs,deflection:d?{max:d.max,allowed:d.allowed,utilization:d.utilization}:null,accuracy:r.accuracy,ltb:last.ltb||null},assumptions:'Euler–Bernoulli; constant EI; linear elastic; small deflection'},null,2),'application/json');
     }
     function exportBeamCSV() {
       if(!last)return;const r=last.res,div=isUS()?12:1;
@@ -2030,7 +2030,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline-color:#b4232f
     preview();
   </script>
 <script src="workspace.js?v=20261007-6"></script>
-<script src="engineering.js?v=1"></script>
+<script src="engineering.js?v=2"></script>
 </body></html>
 
 

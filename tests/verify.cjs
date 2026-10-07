@@ -1,7 +1,7 @@
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const file=process.argv[2]||'index.html',html=fs.readFileSync(file,'utf8');
 function extract(name){const start=html.indexOf('    function '+name+'(');assert(start>=0,name);const lineEnd=html.indexOf('\n',start);if(html.slice(start,lineEnd).trim().endsWith('}'))return html.slice(start,lineEnd);return html.slice(start,html.indexOf('\n    }',start)+6);}
-const names=['validateModel','analysisAccuracy','solveLin','distAt','distW','distM','analyze','integrationBeam','cableReactions','polyValue','polynomialRoots01','computeDeflection','rectangleSection','sectionModel','sectionPoint','designBeam'];
+const names=['validateModel','analysisAccuracy','solveLin','distAt','distW','distM','analyze','integrationBeam','cableReactions','polyValue','polynomialRoots01','computeDeflection','rectangleSection','sectionModel','sectionPoint','designBeam','fixedSection','capacitySolve','curvatureFromStrain','minimumRectangleWidth'];
 const ctx=vm.createContext({console});vm.runInContext(`const E9=1e-9,clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),detailNumber=String,fmt=String;let UNIT={F:'kN',L:'m'};const defValue=x=>x*1000,isUS=()=>UNIT.L==='in',FORCE_N={kN:1000,N:1,kip:4448.2216152605,lb:4.4482216152605},TFAM=['AUTO','W','S','C','L'];`+names.map(extract).join('\n'),ctx);
 let count=0;function close(actual,expected,label,tol=1e-8){assert(Number.isFinite(actual)&&Math.abs(actual-expected)<=tol*Math.max(1e-10,Math.abs(expected)),`${label}: ${actual} != ${expected}`);count++;}
 function input(L,sups,points=[],dists=[],moms=[]){return {L,sups,points,dists,moms};}
@@ -52,4 +52,10 @@ for(let j=0;j<one.rows.length;j++){const a=one.rows[j],b=two.rows.find(v=>v.k===
 ctx.i=input(5,[{t:'pin',x:0},{t:'cable',x:5,angle:45}],[{x:2.5,F:10}]);const cable=vm.runInContext('analyze(i)',ctx);close(cable.reactions[1].tension,5*Math.sqrt(2),'cable tension');close(cable.N(2.5,1),5,'cable axial');
 ctx.i=input(5,[{t:'pin',x:0},{t:'cable',x:5,angle:45}],[{x:2.5,F:-10}]);assert.throws(()=>vm.runInContext('analyze(i)',ctx));count++;
 for(const P of [1e-12,1e12]){const v=run(input(5,simple(5),[{x:2.5,F:P}]),20000);close(v.r.Vmax.abs,P/2,'load magnitude shear',1e-12);close(v.r.Mabs.abs,P*5/4,'load magnitude moment',1e-12);}
-const result={assertions:count,status:'passed',cases:['simple','cantilever','fixed','propped','continuous','triangular','partial distributed','couple','load reversal','SI/US','near coincident loads','compatibility','invalid inputs','section properties','load magnitude']};console.log(JSON.stringify(result));
+ctx.i=input(5,simple(5),[{x:2.5,F:10}]);ctx.mat={sec:'rect',b:.2,h:.4,sa:3000,ta:1000,checkShear:true,useDeflection:false,selfWeight:false};
+const capacity=vm.runInContext("capacitySolve(i,mat,['P1'])",ctx);close(capacity.alpha,1.28,'maximum selected point load',1e-8);close(capacity.stress,3000,'capacity bending boundary');
+const rect=vm.runInContext('sectionModel(mat)',ctx);ctx.model=rect;
+const stressPoint=vm.runInContext('sectionPoint(model,12.5,5,.2,1)',ctx);close(stressPoint.sigma,1/rect.A-12.5*.2/rect.I,'combined point stress');close(vm.runInContext('sectionPoint(model,12.5,5,0).tau',ctx),1.5*5/rect.A,'neutral axis shear');
+close(vm.runInContext('minimumRectangleWidth(analyze(i),.4,3000,1000,true)',ctx),6*12.5/(3000*.4**2),'minimum rectangular width');
+const strain=vm.runInContext('curvatureFromStrain(.001,.1,1)',ctx);close(strain.kappa,-.01,'strain curvature');close(strain.radius,100,'strain radius');close(strain.sagitta,.25/(100+Math.sqrt(10000-.25)),'strain sagitta');
+const result={assertions:count,status:'passed',cases:['simple','cantilever','fixed','propped','continuous','triangular','partial distributed','couple','load reversal','SI/US','near coincident loads','compatibility','invalid inputs','section properties','load magnitude','load capacity','point stress','minimum width','strain curvature']};console.log(JSON.stringify(result));

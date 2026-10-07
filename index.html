@@ -678,7 +678,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
       };
       const sd = c => { const o = []; if (c > xTolerance) o.push(-1); if (c < L - xTolerance) o.push(1); return o; };
       let Vmax = { abs: 0, v: 0, x: 0 }, cands = [];
-      const considerV = (x, v) => { if (Math.abs(v) > Vmax.abs + 1e-9) Vmax = { abs: Math.abs(v), v: v, x: x }; };
+      const considerV = (x, v) => { if (Math.abs(v) > Vmax.abs) Vmax = { abs: Math.abs(v), v: v, x: x }; };
       crit.forEach(c => sd(c).forEach(s => { considerV(c, V(c, s)); cands.push({ x: c, v: M(c, s) }); }));
       const roots = [];
       for (let i = 0; i < n - 1; i++) {
@@ -1212,7 +1212,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
 
     const detailNumber = v => {
       if (!Number.isFinite(v)) return '–';
-      if (Math.abs(v) < 1e-10) return '0';
+      if (v === 0) return '0';
       return Math.abs(v) < 0.001 || Math.abs(v) >= 1e7 ? v.toExponential(5) : Number(v.toPrecision(7)).toString();
     };
     const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

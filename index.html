@@ -125,6 +125,27 @@ footer>span:first-child{color:var(--muted);font-weight:500}
 [data-theme=dark] .is-pass{color:#86b99c!important}[data-theme=dark] .is-fail{color:#e5a3a3!important}
 @media(max-width:900px){.sidebar{padding-top:18px}.brand-wordmark{font-size:22px}.topbar{height:48px}}
 @media(max-width:700px){main{padding-top:24px}.page-heading h1{font-size:27px}.project-tools{margin-bottom:23px}.panel{padding:20px}.sidebar nav{background:#f7f7f7}[data-theme=dark] .sidebar nav{background:#262626}}
+
+/* HRTX red accents on a neutral minimal interface. */
+:root{--accent:#b4232f;--accent-soft:#fdf2f3}
+[data-theme=dark]{--accent:#f08b94;--accent-soft:#332226}
+.brand-mark>span{color:#b4232f}
+.sidebar nav button[aria-current=step]{background:#fdf2f3;color:#9f1f2b;box-shadow:inset 2px 0 #b4232f}
+.section-num{color:#a2212e;border-color:#e9cbd0}
+.beam-option input:checked+span{border-color:#b4232f;background:#fffafb}.beam-option input:checked+span svg{stroke:#a2212e}.beam-option input:checked+span b{color:#92212c}
+.mode input:checked+span{border-color:#c65b65;background:#fffafb}.mode input:checked+span:before{border-color:#b4232f}
+#calc,#designNow,#toDesign{background:#b4232f;color:#fff}#calc:hover,#designNow:hover,#toDesign:hover{background:#981e29}
+input:focus,select:focus{border-color:#b4232f;box-shadow:0 0 0 3px #b4232f12}
+button:focus-visible,a:focus-visible,summary:focus-visible{outline-color:#b4232f}
+.beam-option input:focus-visible+span,.mode input:focus-visible+span{outline-color:#b4232f}
+.selection-dot{background:transparent}.beam-option input:checked+span .selection-dot{background:#b4232f}
+[data-theme=dark] .brand-mark>span{color:#f08b94}
+[data-theme=dark] .sidebar nav button[aria-current=step]{background:#332226;color:#f4a2aa;box-shadow:inset 2px 0 #f08b94}
+[data-theme=dark] .section-num{color:#f4a2aa;border-color:#60353c}
+[data-theme=dark] .beam-option input:checked+span,[data-theme=dark] .mode input:checked+span{background:#2b2224;border-color:#bc6670}
+[data-theme=dark] .beam-option input:checked+span b{color:#f4a2aa}[data-theme=dark] .beam-option input:checked+span svg{stroke:#e48a94}
+[data-theme=dark] #calc,[data-theme=dark] #designNow,[data-theme=dark] #toDesign{background:#b4232f;color:#fff}
+[data-theme=dark] #calc:hover,[data-theme=dark] #designNow:hover,[data-theme=dark] #toDesign:hover{background:#c82d3a}
 </style></head><body>
 <aside class="sidebar">
   <a class="brand" href="#" onclick="switchTab(1); return false"><span class="brand-mark">b<span>·</span></span><span class="brand-wordmark">HRTX<span class="brand-suffix">/ beam workspace</span></span></a>

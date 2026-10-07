@@ -92,7 +92,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
 <div class="app-shell">
   <header class="topbar"><span>เครื่องมือวิเคราะห์โครงสร้าง</span><div class="topbar-tools"><span class="topbar-status"><i></i>พร้อมใช้งาน</span><div class="theme-picker" role="group" aria-label="ธีมหน้าจอ"><button id="theme-light" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12l2 2M4 20l2-2M18 6l2-2"/></svg>สว่าง</button><button id="theme-dark" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20 15a9 9 0 01-11-11A9 9 0 1020 15Z"/></svg>มืด</button></div></div></header>
   <main>
-    <div class="project-tools"><span>HRTX / beam · เฟส 2</span><div><button type="button" id="exportCSV">ส่งออก CSV</button><button type="button" id="exportJSON">ส่งออก JSON</button></div></div><div class="page-heading"><div><div class="eyebrow">HRTX / STRUCTURAL WORKSPACE</div><h1 id="pageTitle">ตั้งค่าคาน</h1><p id="pageSubtitle">เริ่มจากรูปแบบคาน แล้วเพิ่มแรงที่กระทำ</p></div><span class="heading-symbol" aria-hidden="true">↗</span></div>
+    <div class="project-tools"><span>HRTX / beam · เฟส 2</span><div><button type="button" id="exportCSV">ส่งออก CSV</button><button type="button" id="exportJSON">ส่งออก JSON</button></div></div><details id="exportPreview" class="panel" hidden><summary>รายงานส่งออก · <span id="exportFilename"></span></summary><p class="calculation-note">ระบบส่งไฟล์ให้เบราว์เซอร์ดาวน์โหลดแล้ว หากไม่พบไฟล์ สามารถเลือกและคัดลอกข้อมูลด้านล่างได้</p><textarea id="exportText" readonly aria-label="ข้อมูลรายงานส่งออก" style="width:100%;height:180px;background:var(--paper);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:12px;font:12px Consolas,monospace"></textarea></details><div class="page-heading"><div><div class="eyebrow">HRTX / STRUCTURAL WORKSPACE</div><h1 id="pageTitle">ตั้งค่าคาน</h1><p id="pageSubtitle">เริ่มจากรูปแบบคาน แล้วเพิ่มแรงที่กระทำ</p></div><span class="heading-symbol" aria-hidden="true">↗</span></div>
     <div id="tab-1" class="tab-content active">
       <section class="canvas-panel"><div class="canvas-heading"><span>ภาพรวมโครงสร้าง</span><span class="live-label"><i></i>อัปเดตตามข้อมูล</span></div><div id="pv"></div><div class="canvas-footer"><span>ตัวอักษร A, B, C… แทนจุดสำคัญบนคาน</span><span>BEAM MODEL / 01</span></div></section>
       <div class="setup-grid"><section class="panel geometry">
@@ -610,7 +610,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
       const relative=Math.max(residual,forceError,momentError);return {relative,residual,forceError,momentError,ok:Number.isFinite(relative)&&relative<=1e-8};
     }
     function downloadText(name,text,type) {
-      const url=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+      const url=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();$('exportPreview').hidden=false;$('exportPreview').open=true;$('exportFilename').textContent=name;$('exportText').value=text;setTimeout(()=>URL.revokeObjectURL(url),1000);
     }
     function exportBeamJSON() {
       if(!last){$('err').hidden=false;$('err').textContent='วิเคราะห์คานก่อนส่งออก';return;}
@@ -893,7 +893,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
       return rows;
     }
     function renderCheckStatus() {
-      const rows=getCheckRows(last);if(last&&last.res.accuracy)rows.splice(2,0,['ความคลาดเคลื่อนของการแก้สมการ',last.res.accuracy.ok,'ค่าคลาดเคลื่อนสัมพัทธ์สูงสุด = '+detailNumber(last.res.accuracy.relative)+' · ตรวจสมดุลและเงื่อนไขจุดรองรับ']);const html=rows.map(([title,status,note])=>`<div class="check-row"><span class="check-badge ${status===null?'not-checked':status?'is-pass':'is-fail'}">${status===null?'ยังไม่ตรวจ':status?'ผ่าน':'ไม่ผ่าน'}</span><div><b>${esc(title)}</b><p>${esc(note)}</p></div></div>`).join('');
+      const rows=getCheckRows(last);if(last&&last.res.accuracy)rows.splice(2,0,['ความคลาดเคลื่อนของการแก้สมการ',last.res.accuracy.ok,'ค่าคลาดเคลื่อนสัมพัทธ์สูงสุด = '+last.res.accuracy.relative.toExponential(3)+' · ตรวจสมดุลและเงื่อนไขจุดรองรับ']);const html=rows.map(([title,status,note])=>`<div class="check-row"><span class="check-badge ${status===null?'not-checked':status?'is-pass':'is-fail'}">${status===null?'ยังไม่ตรวจ':status?'ผ่าน':'ไม่ผ่าน'}</span><div><b>${esc(title)}</b><p>${esc(note)}</p></div></div>`).join('');
       $('analysisChecks').innerHTML=html;$('designChecks').innerHTML=html;
       const out=[];
       if(last&&last.design&&last.res.deflection){

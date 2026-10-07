@@ -276,7 +276,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline-color:#b4232f
         </button>
       </div>
 
-      <section id="deflectionReport" class="bg-white" hidden><h2>การโก่งตัวของคาน</h2><p id="deflectionInputSummary" class="deflection-summary"></p><div id="deflectionValues" class="deflection-values"></div><p id="deflectionResult" class="check-note"></p></section><section class="bg-white"><div class="check-heading"><h2>สถานะการตรวจ</h2><span>ผลเฉพาะรายการที่ตรวจ ไม่รวมรายการที่ยังไม่ตรวจ</span></div><div id="analysisChecks" class="check-grid"></div><div class="assumptions"><h3>สมมติฐานและขอบเขตที่ใช้</h3><p>คาน Euler–Bernoulli · E และ I คงที่ · วัสดุยืดหยุ่นเชิงเส้นและการโก่งตัวขนาดเล็ก · คิดเฉพาะแรงที่กรอก รวมน้ำหนักคานเมื่อเปิดตัวเลือกนั้น · การโก่งตัวไม่นับส่วนจาก shear deformation · ตรวจความเค้นตามค่าที่กรอก ยังไม่มีการตรวจการโก่งเดาะ การบิด รอยต่อ หรือชุดแรงตามมาตรฐาน</p></div></section><section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm" id="calcCard" hidden>
+      <section id="deflectionReport" class="bg-white" hidden><h2>การโก่งตัวของคาน</h2><p id="deflectionInputSummary" class="deflection-summary"></p><div id="deflectionValues" class="deflection-values"></div><p id="deflectionResult" class="check-note"></p></section><section class="bg-white"><div class="check-heading"><h2>สถานะการตรวจ</h2><span>ผลเฉพาะรายการที่ตรวจ ไม่รวมรายการที่ยังไม่ตรวจ</span></div><div id="analysisChecks" class="check-grid"></div><div class="assumptions"><h3>สมมติฐานและขอบเขตที่ใช้</h3><p>คาน Euler–Bernoulli · E และ I คงที่ · วัสดุยืดหยุ่นเชิงเส้นและการโก่งตัวขนาดเล็ก · คิดเฉพาะแรงที่กรอก รวมน้ำหนักคานเมื่อเปิดตัวเลือกนั้น · การโก่งตัวไม่นับส่วนจาก shear deformation · ตรวจความเค้นตามค่าที่กรอก ตรวจการโก่งเดาะแยกเฉพาะ AISC F2 ตามขอบเขตในเครื่องมือ; ยังไม่ตรวจแรงบิดภายนอก รอยต่อ หรือสร้างชุดแรงตามมาตรฐาน</p></div></section><section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm" id="calcCard" hidden>
         <h2 class="text-base font-bold mb-4 text-slate-900 dark:text-white">วิธีทำขั้นตอนอย่างละเอียด</h2>
         <div id="sol" class="flex flex-col gap-6"></div>
       </section>
@@ -2030,7 +2030,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline-color:#b4232f
     preview();
   </script>
 <script src="workspace.js?v=20261007-6"></script>
-<script src="engineering.js?v=2"></script>
+<script src="engineering.js?v=3"></script>
 </body></html>
 
 

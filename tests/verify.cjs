@@ -72,6 +72,17 @@ ctx.project.model.L=-1;assert.throws(()=>vm.runInContext('checkProject(project)'
 // Practice C5-2 5.58 and 5.62: independent Q/Ib checks.
 vm.runInContext("UNIT={F:'lb',L:'in'}",ctx);ctx.mat={sec:'rhs',b:8,h:10,thk:1};const hollow=vm.runInContext('sectionModel(mat)',ctx);ctx.shape=hollow;close(vm.runInContext('sectionPoint(shape,0,1800,0).tau',ctx),1800*52/(((8*10**3-6*8**3)/12)*2),'P5.58 neutral shear');close(vm.runInContext('sectionPoint(shape,0,1800,4).tau',ctx),1800*36/(((8*10**3-6*8**3)/12)*2),'P5.58 web flange interface');
 vm.runInContext("UNIT={F:'kN',L:'m'}",ctx);ctx.mat={sec:'ibeam',b:.12,h:.2,tw:.02,tf:.02};ctx.shape=vm.runInContext('sectionModel(mat)',ctx);close(vm.runInContext('sectionPoint(shape,0,100,0).tau',ctx),100*(.12*.02*.09+.02*.08**2/2)/((.12*.2**3/12-.1*.16**3/12)*.02),'P5.62 neutral shear',1e-4);
+
+// New engineering tools: LTB branches, scope rejection, brace moments and remedies.
+const engineering=fs.readFileSync(require('path').join(require('path').dirname(file),'engineering.js'),'utf8');vm.runInContext(engineering.slice(engineering.indexOf('function aiscF2'),engineering.indexOf('const engineeringPanel')),ctx);
+ctx.ltb={E:200000,Fy:250,Sx:1e6,Zx:1.12e6,Iy:8e6,Cw:1.8e11,J:2e5,h0:300,A:7000,bf:180,tf:14,hw:280,tw:8,Lb:1000,Cb:1,demand:1e8,method:'ASD'};
+let f2=vm.runInContext('aiscF2(ltb)',ctx);close(f2.Mn,280e6,'F2 yielding');close(f2.available,280e6/1.67,'F2 ASD');close(f2.Lp,1682.8818819428263,'F2 Lp');close(f2.Lr,4254.647116797009,'F2 Lr');
+ctx.ltb.Lb=(f2.Lp+f2.Lr)/2;close(vm.runInContext('aiscF2(ltb).Mn',ctx),(280e6+175e6)/2,'F2 inelastic midpoint');ctx.ltb.Lb=f2.Lr;close(vm.runInContext('aiscF2(ltb).Mn',ctx),175e6,'F2 Lr boundary');ctx.ltb.Lb=10000;const elasticF2=vm.runInContext('aiscF2(ltb)',ctx);close(elasticF2.Mn,54702900.07453495,'F2 elastic reference');assert(!elasticF2.ok);count++;
+ctx.ltb.Cb=2;close(vm.runInContext('aiscF2(ltb).Mn',ctx),2*elasticF2.Mn,'F2 Cb factor');ctx.ltb.Lb=1000;ctx.ltb.method='LRFD';close(vm.runInContext('aiscF2(ltb).available',ctx),252e6,'F2 LRFD');
+const safe={...ctx.ltb};for(const [k,v] of [['J',0],['Cw',NaN],['Fy',-1],['tf',1],['tw',.1],['Zx',1],['Cb',.5],['demand',-1],['method','invalid']]){ctx.ltb={...safe,[k]:v};assert.throws(()=>vm.runInContext('aiscF2(ltb)',ctx));count++;}ctx.ltb=safe;
+ctx.i=input(5,simple(5),[],[{s:0,e:5,w1:2,w2:2}]);ctx.braceRes=run(ctx.i).r;const brace=vm.runInContext('braceSegment(braceRes,0,5)',ctx);close(brace.max,6.25,'brace maximum includes zero shear');close(brace.Cb,12.5/(2.5+3*.75+4+3*.75),'Cb UDL');const sub=vm.runInContext('braceSegment(braceRes,0,1)',ctx);close(sub.max,4,'brace local maximum');assert.throws(()=>vm.runInContext('braceSegment(braceRes,2,1)',ctx));count++;
+ctx.shape=vm.runInContext('sectionModel({sec:"rect",b:.1,h:.2})',ctx);ctx.delta={mat:{Im4:1e-5},utilization:2};const remedy=vm.runInContext('repairRequirements(67.6,58,100000,58000,shape,delta)',ctx);close(remedy.Srequired,.000676,'required S');close(remedy.shearUtilization,.075,'required shear utilization');close(remedy.Irequired,2e-5,'required I');
+
 const result={assertions:count,status:'passed',cases:['simple','cantilever','fixed','propped','continuous','triangular','partial distributed','couple','load reversal','SI/US','near coincident loads','compatibility','invalid inputs','section properties','load magnitude','load capacity','point stress','minimum width','strain curvature']};console.log(JSON.stringify(result));
 
 

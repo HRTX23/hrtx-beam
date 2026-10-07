@@ -1715,7 +1715,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible{outline-color:#b4232f
         renderAnswers(last.res,last.inp);drawFig(last.res,last.inp,'fig');renderSolution(last.res,last.inp);renderDeflection(last.res);
       }else if(des.table){last.inp=base;last.res=baseRes;const elastic=readElastic();if(elastic.mat&&!elastic.errors.length)baseRes.deflection=computeDeflection(baseRes,base,elastic.mat);renderAnswers(baseRes,base);drawFig(baseRes,base,'fig');renderSolution(baseRes,base);renderDeflection(baseRes);}
 
-      if(!des.table){last.inp=base;last.res=baseRes;const elastic=readElastic();if(elastic.mat&&!elastic.errors.length){let mat=elastic.mat;if(r.m.useDeflection){const I=sectionModel(r.m).I*(isUS()?.0254:1)**4;$('defI').value=Number((I/INERTIA_M4[mat.Iu]).toPrecision(12));mat={...mat,Im4:I,EI:mat.Epa*I/(FORCE_N[UNIT.F]*(isUS()?.0254:1)**2),Iinput:I/INERTIA_M4[mat.Iu]};}baseRes.deflection=computeDeflection(baseRes,base,mat);}renderAnswers(baseRes,base);drawFig(baseRes,base,'fig');renderSolution(baseRes,base);renderDeflection(baseRes);}
+      if(!des.table){last.inp=base;last.res=baseRes;const elastic=readElastic();if(elastic.mat&&!elastic.errors.length){let mat=elastic.mat;if(r.m.sec!=='custom'){const I=sectionModel(r.m).I*(isUS()?.0254:1)**4;$('defI').value=Number((I/INERTIA_M4[mat.Iu]).toPrecision(12));mat={...mat,Im4:I,EI:mat.Epa*I/(FORCE_N[UNIT.F]*(isUS()?.0254:1)**2),Iinput:I/INERTIA_M4[mat.Iu]};}baseRes.deflection=computeDeflection(baseRes,base,mat);}renderAnswers(baseRes,base);drawFig(baseRes,base,'fig');renderSolution(baseRes,base);renderDeflection(baseRes);}
       last.design = {des, mat:r.m};
       renderDesignSolution(last.res, last.inp, des, r.m);
       if(des.table&&r.m.selfWeight){

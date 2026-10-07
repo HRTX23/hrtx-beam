@@ -36,7 +36,7 @@ engineeringPanel.innerHTML=`<h2>ปรับหน้าตัดและตร
 $('dans').after(engineeringPanel);
 const propertyNames={Sx:'Sx (mm³)',Zx:'Zx (mm³)',Iy:'Iy (mm⁴)',Cw:'Cw (mm⁶)',J:'J (mm⁴)',h0:'ระยะศูนย์กลางปีก h₀ (mm)',A:'พื้นที่ A (mm²)',bf:'ความกว้างปีก bf (mm)',tf:'ความหนาปีก tf (mm)',hw:'ความสูงเอวสำหรับ B4.1b h (mm)',tw:'ความหนาเอว tw (mm)'};
 $('ltbPropertyFields').innerHTML=Object.entries(propertyNames).map(([key,label])=>`<label>${label}<input id="ltb${key}" type="number" step="any" min="0"></label>`).join('');
-let stressState=null,comparisonState=null;
+let stressState=null,comparisonState=null,braceDisplayMetres=isUS()?.3048:1;
 function activeShape(){if(!last?.design)throw Error('คำนวณออกแบบหน้าตัดก่อน');const {des,mat}=last.design,row=des.table?(des.selected||des.best):null;if(des.table&&!row)throw Error('เลือกหน้าตัดเฉพาะเพื่อดูความเค้นและการโก่งเดาะ');return {des,mat,row,shape:sectionModel(mat,row)};}
 function sectionElastic(shape){const elastic=readElastic();if(elastic.errors.length)throw Error(elastic.errors.join(' · '));if(!elastic.mat)return null;const m=isUS()?.0254:1,I=shape.I*m**4;return {...elastic.mat,Im4:I,EI:elastic.mat.Epa*I/(FORCE_N[UNIT.F]*m*m),Iinput:I/INERTIA_M4[elastic.mat.Iu]};}
 function shapeDeflection(shape,res=last.res,inp=last.inp){const elastic=sectionElastic(shape);return elastic?computeDeflection(res,inp,elastic):null;}
@@ -71,6 +71,7 @@ function renderStressControls(){
   ['pictureX','pictureSide','pictureY'].forEach(id=>$(id).oninput=drawStressDistribution);drawStressDistribution();
 }
 function drawStressDistribution(){
+  if($('reportPreview'))$('reportPreview').replaceChildren();if($('reportPrint'))$('reportPrint').hidden=true;
   try{if(!stressState||!last)throw Error('คำนวณหน้าตัดก่อน');const shape=stressState.shape,x=Number($('pictureX').value)*(isUS()?12:1),side=Number($('pictureSide').value),y=Number($('pictureY').value);
     if($('pictureX').value===''||$('pictureY').value===''||!Number.isFinite(x)||x<0||x>last.res.L)throw Error('ตำแหน่ง x ต้องอยู่ในคาน');
     const M=last.res.M(x,side),V=last.res.V(x,side),N=last.res.N?last.res.N(x,side):0,point=sectionPoint(shape,M,V,y,N),height=shape.top-shape.bottom;
@@ -83,10 +84,11 @@ function drawStressDistribution(){
   }catch(e){$('stressPointSummary').textContent=e.message;$('stressDistribution').replaceChildren();}
 }
 $('ltbUseSection').onclick=()=>{
+  if(last)delete last.ltb;renderCheckStatus();if(typeof clearWorkspaceResults==='function')clearWorkspaceResults();
   try{const {mat,row}=activeShape();if(mat.axis!=='x'||mat.count!==1||!(row?.fam==='W'||mat.sec==='ibeam'))throw Error('เลือก W/I หนึ่งตัว ดัดแกนหลัก x');
     const d=row?row.d:mat.h*(isUS()?25.4:1000),b=row?row.bf:mat.b*(isUS()?25.4:1000),tw=row?row.tw:mat.tw*(isUS()?25.4:1000),tf=row?row.tf:mat.tf*(isUS()?25.4:1000);
     const values={Sx:row?row.S*1000:sectionModel(mat).S*(isUS()?25.4:1000)**3,Iy:row?.Iy?row.Iy*1e6:(2*tf*b**3+(d-2*tf)*tw**3)/12,A:row?.Amm2||2*b*tf+(d-2*tf)*tw,h0:d-tf,bf:b,tf,hw:d-2*tf,tw};
-    Object.entries(values).forEach(([k,v])=>$('ltb'+k).value=Number(v.toPrecision(12)));['Zx','J','Cw'].forEach(k=>$('ltb'+k).value='');$('ltbResult').textContent='เติมค่าที่มีแล้ว ตรวจค่า h ตามนิยาม B4.1b และกรอก Zx / J / Cw จากแหล่งที่ตรวจสอบได้; ค่า Iy ที่ไม่มีในตารางคำนวณจากสี่เหลี่ยม ไม่รวม fillet';$('ltbConfirm').checked=false;
+    Object.entries(values).forEach(([k,v])=>$('ltb'+k).value=Number(v.toPrecision(12)));if(mat.sy>0)$('ltbFy').value=Number(stressMPa(mat.sy).toPrecision(12));if(mat.elastic?.Epa>0)$('ltbE').value=mat.elastic.Epa/1e6;['Zx','J','Cw'].forEach(k=>$('ltb'+k).value='');$('ltbResult').textContent='เติมค่าที่มีแล้ว ตรวจค่า h ตามนิยาม B4.1b และกรอก Zx / J / Cw จากแหล่งที่ตรวจสอบได้; ค่า Iy ที่ไม่มีในตารางคำนวณจากสี่เหลี่ยม ไม่รวม fillet';$('ltbConfirm').checked=false;
   }catch(e){$('ltbResult').textContent=e.message;}
 };
 $('ltbCalculate').onclick=()=>{
@@ -96,7 +98,7 @@ $('ltbCalculate').onclick=()=>{
     $('ltbResult').innerHTML=`<h3>ผลการตรวจ F2 · ${p.method}</h3><p class="engineering-summary ${result.ok?'pass':'fail'}">${result.ok?'✓ ผ่าน':'✕ ไม่ผ่าน'} เฉพาะช่วง x = ${detailNumber(a/(isUS()?12:1))}–${detailNumber(b/(isUS()?12:1))} ${$('uL').value} · ใช้กำลัง ${detailNumber(result.utilization*100)}%</p><p>${esc(result.branch)} · Cb = ${detailNumber(p.Cb)}</p><table><tbody>${[['Lb',p.Lb,'mm'],['Lp',result.Lp,'mm'],['Lr',result.Lr,'mm'],['โมเมนต์ที่ต้องรับ',p.demand/1e6,'kN·m'],['Mn',result.Mn/1e6,'kN·m'],[p.method==='ASD'?'Mn / 1.67':'0.90 Mn',result.available/1e6,'kN·m'],['λf / λpf',result.flange/result.flangeLimit,''],['λw / λpw',result.web/result.webLimit,'']].map(([k,v,u])=>`<tr><th>${esc(k)}</th><td>${detailNumber(v)} ${u}</td></tr>`).join('')}</tbody></table><details><summary>ค่าคุณสมบัติที่ใช้คำนวณ · หน่วย MPa / mm</summary><pre>${esc(JSON.stringify(p,null,2))}</pre></details><p>ผลผ่านนี้ไม่ครอบคลุมช่วงอื่นของคาน ความแข็งแรงค้ำยัน จุดต่อ หรือเสถียรภาพโดยรวม ใช้ฐานแรง ${p.method} ที่ยืนยันโดยผู้ใช้</p>`;
   }catch(e){if(last)delete last.ltb;renderCheckStatus();$('ltbResult').textContent='ยังตัดสินไม่ได้: '+e.message;}
 };
-function clearEngineering(){stressState=null;comparisonState=null;if(last)delete last.ltb;$('advancedFeatures').hidden=true;['repairAdvice','candidateComparison','stressPicture','ltbResult'].forEach(id=>$(id).replaceChildren());}
-document.addEventListener('input',e=>{if(e.target.closest('#matCard,#tab-1'))clearEngineering();if(e.target.closest('#ltbConfig')){if(last)delete last.ltb;$('ltbResult').textContent='ข้อมูลเปลี่ยนแล้ว ต้องตรวจใหม่';renderCheckStatus();}});
-document.addEventListener('change',e=>{if(e.target.closest('#matCard,#tab-1'))clearEngineering();if(e.target.closest('#ltbConfig')){if(last)delete last.ltb;$('ltbResult').textContent='ข้อมูลเปลี่ยนแล้ว ต้องตรวจใหม่';renderCheckStatus();}});
+function clearEngineering(){const next=isUS()?.3048:1;if(next!==braceDisplayMetres){['braceStart','braceEnd'].forEach(id=>{if($(id).value!=='')$(id).value=Number((Number($(id).value)*braceDisplayMetres/next).toPrecision(12));});braceDisplayMetres=next;}stressState=null;comparisonState=null;if(last)delete last.ltb;$('advancedFeatures').hidden=true;['repairAdvice','candidateComparison','stressPicture','ltbResult'].forEach(id=>$(id).replaceChildren());}
+document.addEventListener('input',e=>{if(e.target.closest('#matCard,#tab-1'))clearEngineering();if(e.target.closest('#ltbConfig')){if(e.target.id!=='ltbConfirm')$('ltbConfirm').checked=false;if(last)delete last.ltb;$('ltbResult').textContent='ข้อมูลเปลี่ยนแล้ว ต้องตรวจใหม่';renderCheckStatus();}});
+document.addEventListener('change',e=>{if(e.target.closest('#matCard,#tab-1'))clearEngineering();if(e.target.closest('#ltbConfig')){if(e.target.id!=='ltbConfirm')$('ltbConfirm').checked=false;if(last)delete last.ltb;$('ltbResult').textContent='ข้อมูลเปลี่ยนแล้ว ต้องตรวจใหม่';renderCheckStatus();}});
 $('advancedFeatures').hidden=true;

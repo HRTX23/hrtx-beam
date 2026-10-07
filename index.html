@@ -78,7 +78,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
 [data-theme=dark] .topbar>span,[data-theme=dark] .sidebar-bottom small{color:#b6a8c9}
 [data-theme=dark] footer>span:first-child{color:#c1ace2}
 @media(max-width:900px){.brand-wordmark{font-size:22px}.brand-suffix{display:block;font-size:8px}.sidebar{background:var(--paper)}}
-@media(max-width:700px){.heading-symbol{width:48px;height:48px;font-size:30px}.eyebrow{font-size:8px;letter-spacing:1.2px}.page-heading{padding-bottom:20px}.topbar>span{font-size:10px}}</style></head><body>
+@media(max-width:700px){.heading-symbol{width:48px;height:48px;font-size:30px}.eyebrow{font-size:8px;letter-spacing:1.2px}.page-heading{padding-bottom:20px}.topbar>span{font-size:10px}}.project-tools{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:22px;font-size:11px;color:var(--muted)}.project-tools>div{display:flex;gap:8px}.project-tools button{padding:8px 12px;border:1px solid var(--line);background:var(--paper);color:var(--accent);border-radius:7px;font-size:11px}@media(max-width:700px){.project-tools{flex-wrap:wrap}}[data-theme=dark] .project-tools button{color:#d0b5ed}</style></head><body>
 <aside class="sidebar">
   <a class="brand" href="#" onclick="switchTab(1); return false"><span class="brand-mark">b<span>·</span></span><span class="brand-wordmark">HRTX<span class="brand-suffix">/ beam workspace</span></span></a>
   <div class="sidebar-label">พื้นที่ทำงาน</div>
@@ -92,7 +92,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
 <div class="app-shell">
   <header class="topbar"><span>เครื่องมือวิเคราะห์โครงสร้าง</span><div class="topbar-tools"><span class="topbar-status"><i></i>พร้อมใช้งาน</span><div class="theme-picker" role="group" aria-label="ธีมหน้าจอ"><button id="theme-light" type="button" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12l2 2M4 20l2-2M18 6l2-2"/></svg>สว่าง</button><button id="theme-dark" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M20 15a9 9 0 01-11-11A9 9 0 1020 15Z"/></svg>มืด</button></div></div></header>
   <main>
-    <div class="page-heading"><div><div class="eyebrow">HRTX / STRUCTURAL WORKSPACE</div><h1 id="pageTitle">ตั้งค่าคาน</h1><p id="pageSubtitle">เริ่มจากรูปแบบคาน แล้วเพิ่มแรงที่กระทำ</p></div><span class="heading-symbol" aria-hidden="true">↗</span></div>
+    <div class="project-tools"><span>HRTX / beam · เฟส 2</span><div><button type="button" id="exportCSV">ส่งออก CSV</button><button type="button" id="exportJSON">ส่งออก JSON</button></div></div><div class="page-heading"><div><div class="eyebrow">HRTX / STRUCTURAL WORKSPACE</div><h1 id="pageTitle">ตั้งค่าคาน</h1><p id="pageSubtitle">เริ่มจากรูปแบบคาน แล้วเพิ่มแรงที่กระทำ</p></div><span class="heading-symbol" aria-hidden="true">↗</span></div>
     <div id="tab-1" class="tab-content active">
       <section class="canvas-panel"><div class="canvas-heading"><span>ภาพรวมโครงสร้าง</span><span class="live-label"><i></i>อัปเดตตามข้อมูล</span></div><div id="pv"></div><div class="canvas-footer"><span>ตัวอักษร A, B, C… แทนจุดสำคัญบนคาน</span><span>BEAM MODEL / 01</span></div></section>
       <div class="setup-grid"><section class="panel geometry">
@@ -586,10 +586,50 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
     const SRCT = {AISC:'AISC v16 — ตารางครบ (ข้อมูลรุ่นใหม่)',EX:'ตารางข้อสอบ',APP:'Appendix C',COURSE_SMALL:'W ชุดเล็ก · Final 1 หน้า 4 / Q4 หน้า 3',COURSE_LARGE:'W ชุดใหญ่ · Final 1 หน้า 5 / Q4 หน้า 4 / EX หน้า 2',COURSE_H:'H · Final 2 หน้า 3 (TIS 1227-2558)'};
     const FAMN = { W: 'W-shape', S: 'S-shape', C: 'C-channel', L: 'เหล็กฉาก L', U: 'ตารางของคุณ' };
 
+
+    function validateModel(inp) {
+      const e=[],finite=Number.isFinite;if(!inp||!finite(inp.L)||inp.L<=0)return ['ความยาวคานต้องเป็นตัวเลขมากกว่า 0'];
+      if(!['sups','points','dists','moms'].every(k=>Array.isArray(inp[k])))return ['ข้อมูลคานไม่ครบ'];
+      if(inp.sups.length>30||inp.points.length+inp.dists.length+inp.moms.length>300)e.push('รองรับได้สูงสุด 30 จุด และแรง 300 รายการ');
+      if(!inp.sups.length)e.push('เพิ่มจุดรองรับ');
+      const inside=x=>finite(x)&&x>=0&&x<=inp.L;
+      inp.sups.forEach((s,i)=>{if(!inside(s.x)||!['pin','roller','fixed','cable'].includes(s.t))e.push('จุดรองรับไม่ถูกต้อง');if(inp.sups.slice(0,i).some(q=>Math.abs(q.x-s.x)<=32*Number.EPSILON*inp.L))e.push('จุดรองรับซ้อนกัน');if(s.t==='cable'&&(!finite(s.angle)||s.angle<=0||s.angle>=180))e.push('มุมสายเคเบิลไม่ถูกต้อง');});
+      inp.points.forEach(p=>{if(!inside(p.x)||!finite(p.F))e.push('แรงจุดไม่ถูกต้อง');});
+      inp.moms.forEach(m=>{if(!inside(m.x)||!finite(m.C))e.push('โมเมนต์ไม่ถูกต้อง');});
+      inp.dists.forEach(d=>{if(!inside(d.s)||!inside(d.e)||d.s>=d.e||!finite(d.w1)||!finite(d.w2))e.push('แรงกระจายไม่ถูกต้อง');});return [...new Set(e)];
+    }
+    function analysisAccuracy(res,inp) {
+      const g=res.integration;
+      const residual=Math.max(...g.A.map((row,i)=>Math.abs(row.reduce((v,c,j)=>v+c*g.z[j],0)-g.b[i])/(Math.abs(g.b[i])+row.reduce((v,c,j)=>v+Math.abs(c*g.z[j]),0)||1)));
+      const force=inp.points.reduce((v,p)=>v+p.F,0)+inp.dists.reduce((v,d)=>v+distW(d,d.e),0);
+      const moment=inp.points.reduce((v,p)=>v+p.F*p.x,0)+inp.moms.reduce((v,m)=>v+m.C,0)+inp.dists.reduce((v,d)=>v+d.e*distW(d,d.e)-distM(d,d.e),0);
+      const fs=inp.points.reduce((v,p)=>v+Math.abs(p.F),0)+inp.dists.reduce((v,d)=>v+(Math.abs(d.w1)+Math.abs(d.w2))*(d.e-d.s)/2,0)+res.reactions.reduce((v,r)=>v+Math.abs(r.Rv),0)||1;
+      const ms=fs*inp.L+inp.moms.reduce((v,m)=>v+Math.abs(m.C),0)+res.reactions.reduce((v,r)=>v+Math.abs(r.Rm),0)||1;
+      const forceError=Math.abs(res.reactions.reduce((v,r)=>v+r.Rv,0)-force)/fs;
+      const momentError=Math.abs(res.reactions.reduce((v,r)=>v+r.Rv*r.x+r.Rm,0)-moment)/ms;
+      const relative=Math.max(residual,forceError,momentError);return {relative,residual,forceError,momentError,ok:Number.isFinite(relative)&&relative<=1e-8};
+    }
+    function downloadText(name,text,type) {
+      const url=URL.createObjectURL(new Blob([text],{type})),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+    }
+    function exportBeamJSON() {
+      if(!last){$('err').hidden=false;$('err').textContent='วิเคราะห์คานก่อนส่งออก';return;}
+      const r=last.res,d=r.deflection;
+      downloadText('hrtx-beam-results.json',JSON.stringify({schema:'hrtx-beam-results',version:2,units:{force:UNIT.F,length:UNIT.L},model:last.inp,results:{reactions:r.reactions,shearMax:r.Vmax,momentMax:r.Mabs,deflection:d?{max:d.max,allowed:d.allowed,utilization:d.utilization}:null,accuracy:r.accuracy},assumptions:'Euler–Bernoulli; constant EI; linear elastic; small deflection'},null,2),'application/json');
+    }
+    function exportBeamCSV() {
+      if(!last)return;const r=last.res,div=isUS()?12:1;
+      const rows=[['x ('+$('uL').value+')','side','N ('+UNIT.F+')','V ('+UNIT.F+')','M ('+UNIT.F+'·'+$('uL').value+')','delta ('+defUnit()+')','theta (rad)']];
+      const xs=[...new Set([...r.crit,...r.roots,...(r.deflection?r.deflection.extrema:[]),...Array.from({length:201},(_,i)=>r.L*i/200)])].sort((a,b)=>a-b);
+      xs.forEach(x=>(r.crit.includes(x)?(x===0?[1]:x===r.L?[-1]:[-1,1]):[1]).forEach(side=>rows.push([x/div,side<0?'left':'right',r.N(x,side),r.V(x,side),r.M(x,side)/div,r.deflection?defValue(r.deflection.displacement(x)):'',r.deflection?r.deflection.slope(x):''])));
+      downloadText('hrtx-beam-results.csv','\uFEFF'+rows.map(row=>row.join(',')).join('\r\n'),'text/csv;charset=utf-8');
+    }
+
     function solveLin(A, b) {
       const n = b.length; let sc = 0;
       for (const r of A) for (const v of r) sc = Math.max(sc, Math.abs(v));
-      const M = A.map((r, i) => r.concat([b[i]]));
+      if(!n||A.length!==n||A.some(r=>r.length!==n)||!b.every(Number.isFinite)||!A.every(r=>r.every(Number.isFinite)))return null;
+      const M=A.map((r,i)=>{const scale=Math.max(...r.map(Math.abs));return scale?r.map(v=>v/scale).concat(b[i]/scale):r.concat(b[i]);});sc=1;
       for (let k = 0; k < n; k++) {
         let p = k; for (let i = k + 1; i < n; i++) if (Math.abs(M[i][k]) > Math.abs(M[p][k])) p = i;
         if (!Number.isFinite(M[p][k]) || Math.abs(M[p][k]) < 1e-12 * sc) return null;
@@ -610,50 +650,17 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
     }
 
     function analyze(inp) {
-      const L = inp.L, xs = [0, L];
-      inp.sups.forEach(s => xs.push(s.x)); inp.points.forEach(p => xs.push(p.x)); inp.moms.forEach(m => xs.push(m.x));
-      inp.dists.forEach(d => xs.push(d.s, d.e));
-      const crit = [...new Set(xs.map(v => +v.toFixed(9)))].sort((a, b) => a - b);
-      const n = crit.length, nd = 2 * n;
-      const K = Array.from({ length: nd }, () => new Array(nd).fill(0)), F = new Array(nd).fill(0);
-      const idx = x => crit.findIndex(c => Math.abs(c - x) < 1e-7);
-      for (let e = 0; e < n - 1; e++) {
-        const l = crit[e + 1] - crit[e], c = 1 / (l * l * l);
-        const k = [[12, 6 * l, -12, 6 * l], [6 * l, 4 * l * l, -6 * l, 2 * l * l], [-12, -6 * l, 12, -6 * l], [6 * l, 2 * l * l, -6 * l, 4 * l * l]];
-        for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) K[2 * e + i][2 * e + j] += k[i][j] * c;
-      }
-      const gp = [0.5 - 0.5 * Math.sqrt(0.6), 0.5, 0.5 + 0.5 * Math.sqrt(0.6)], gw = [5 / 18, 8 / 18, 5 / 18];
-      inp.dists.forEach(d => {
-        for (let e = 0; e < n - 1; e++) {
-          const a = crit[e], b = crit[e + 1], l = b - a;
-          if (a >= d.s - 1e-9 && b <= d.e + 1e-9) {
-            gp.forEach((xi, g) => {
-              const x = a + xi * l, q = -distAt(d, x), w = gw[g] * l * q;
-              const N = [1 - 3 * xi * xi + 2 * xi * xi * xi, l * (xi - 2 * xi * xi + xi * xi * xi), 3 * xi * xi - 2 * xi * xi * xi, l * (-xi * xi + xi * xi * xi)];
-              for (let i = 0; i < 4; i++) F[2 * e + i] += N[i] * w;
-            });
-          }
-        }
-      });
-      inp.points.forEach(p => { F[2 * idx(p.x)] -= p.F; });
-      inp.moms.forEach(m => { F[2 * idx(m.x) + 1] -= m.C; });
-      const fixedDof = new Set();
-      inp.sups.forEach(s => { fixedDof.add(2 * idx(s.x)); if (s.t === 'fixed') fixedDof.add(2 * idx(s.x) + 1); });
-      const nr = inp.sups.reduce((a, s) => a + (s.t === 'fixed' ? 2 : 1), 0);
-      const free = []; for (let i = 0; i < nd; i++) if (!fixedDof.has(i)) free.push(i);
-      const Kff = free.map(i => free.map(j => K[i][j])), Ff = free.map(i => F[i]);
-      const scales = Kff.map((r,i) => Math.sqrt(Math.abs(r[i])));
-      const solved = free.length ? solveLin(Kff.map((r,i) => r.map((v,j) => v/(scales[i]*scales[j]))), Ff.map((v,i) => v/scales[i])) : [];
-      const uf = solved && solved.map((v,i) => v/scales[i]);
-      if (!uf) return { unstable: true, nr: nr };
-      const u = new Array(nd).fill(0); free.forEach((d, i) => { u[d] = uf[i]; });
-      const rd = i => { let s = -F[i]; for (let j = 0; j < nd; j++) s += K[i][j] * u[j]; return Math.abs(s) < 1e-9 ? 0 : s; };
-      const reactions = inp.sups.map(s => { const i = idx(s.x); return { x: s.x, t: s.t, Rv: rd(2 * i), Rm: s.t === 'fixed' ? rd(2 * i + 1) : 0 }; }).sort((a, b) => a.x - b.x);
-      const integrated=integrationBeam(inp);
-      if(!integrated)return {unstable:true,nr};
-      reactions.forEach(r=>{const q=integrated.reactions.find(t=>Math.abs(t.x-r.x)<1e-7);r.Rv=q.Rv;r.Rm=q.Rm});
-      crit.forEach((x,i)=>{u[2*i]=integrated.qv(x);u[2*i+1]=integrated.qt(x)});
-      const lf = (a, x, side) => side < 0 ? a < x - E9 : a <= x + E9;
+      const errors=validateModel(inp);if(errors.length)throw new Error(errors.join(' · '));
+      const L=inp.L,xs=[0,L,...inp.sups.map(s=>s.x),...inp.points.map(p=>p.x),...inp.moms.map(m=>m.x),...inp.dists.flatMap(d=>[d.s,d.e])];
+      const crit=[...new Set(xs)].sort((a,b)=>a-b),n=crit.length;
+      const nr=inp.sups.reduce((v,s)=>v+(s.t==='fixed'?2:1),0);
+      // Solve normalized compatibility equations directly; do not reject valid
+      // loads because an artificial FE element between adjacent loads is short.
+      const integrated=integrationBeam(inp);if(!integrated)return {unstable:true,nr};
+      const reactions=integrated.reactions;
+      const u=crit.flatMap(x=>[integrated.qv(x),integrated.qt(x)]);
+      const xTolerance=32*Number.EPSILON*L;
+      const lf = (a, x, side) => side < 0 ? a < x - xTolerance : a <= x + xTolerance;
       const V = (x, side) => {
         let v = 0;
         reactions.forEach(r => { if (lf(r.x, x, side)) v += r.Rv; });
@@ -669,7 +676,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
         inp.dists.forEach(d => { m -= distM(d, x); });
         return m;
       };
-      const sd = c => { const o = []; if (c > E9) o.push(-1); if (c < L - E9) o.push(1); return o; };
+      const sd = c => { const o = []; if (c > xTolerance) o.push(-1); if (c < L - xTolerance) o.push(1); return o; };
       let Vmax = { abs: 0, v: 0, x: 0 }, cands = [];
       const considerV = (x, v) => { if (Math.abs(v) > Vmax.abs + 1e-9) Vmax = { abs: Math.abs(v), v: v, x: x }; };
       crit.forEach(c => sd(c).forEach(s => { considerV(c, V(c, s)); cands.push({ x: c, v: M(c, s) }); }));
@@ -678,13 +685,11 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
         const a = crit[i], b = crit[i + 1], d = b - a;
         const v0 = V(a, 1), vm = V((a + b) / 2, 1), v1 = V(b, -1);
         const C = (2 * v1 - 4 * vm + 2 * v0) / (d * d), B = (v1 - v0) / d - C * d;
-        const ts = [];
-        if (Math.abs(C) < 1e-12) { if (Math.abs(B) > 1e-12) ts.push(-v0 / B); }
-        else {
-          const disc = B * B - 4 * C * v0; if (disc >= 0) { const q = Math.sqrt(disc); ts.push((-B + q) / (2 * C), (-B - q) / (2 * C)); }
-          const tv = -B / (2 * C); if (tv > 1e-9 && tv < d - 1e-9) considerV(a + tv, v0 + B * tv + C * tv * tv);
-        }
-        ts.forEach(t => { if (t > 1e-7 && t < d - 1e-7) { roots.push(a + t); cands.push({ x: a + t, v: M(a + t, 1) }); } });
+        // Normalize the interval before root finding; avoid the unstable
+        // quadratic formula when a root lies close to a load boundary.
+        const ts=polynomialRoots01([v0,B*d,C*d*d]);
+        if(C!==0){const tv=-B/(2*C);if(tv>0&&tv<d)considerV(a+tv,v0+B*tv+C*tv*tv);}
+        ts.forEach(t=>{if(t>0&&t<1){const x=a+t*d;roots.push(x);cands.push({x,v:M(x,1)});}});
       }
       let mp = { v: -Infinity, x: 0 }, mn = { v: Infinity, x: 0 };
       cands.forEach(c => { if (c.v > mp.v) mp = c; if (c.v < mn.v) mn = c; });
@@ -698,8 +703,8 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
         }
       }
       const deg = nr - 2;
-      const res={ L, crit, reactions, nr, deg, V, M, roots, Vmax, Mpos: mp, Mneg: mn, Mabs, vpts, mpts, integration:integrated, endV: V(L, 1), endM: M(L, 1), solver: {Kff, Ff, free, q:u} };
-      cableReactions(res,inp);return res;
+      const res={ L, crit, reactions, nr, deg, V, M, roots, Vmax, Mpos: mp, Mneg: mn, Mabs, vpts, mpts, integration:integrated, endV: V(L, 1), endM: M(L, 1), solver: {q:u} };
+      cableReactions(res,inp);res.accuracy=analysisAccuracy(res,inp);if(!res.accuracy.ok)throw new Error('ผลคำนวณมีความคลาดเคลื่อนสูง: ตรวจสอบระยะจุดรองรับและขนาดแรง');return res;
     }
 
     const TFAM = ['AUTO', 'W', 'S', 'C', 'L'];
@@ -850,7 +855,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
       const div=$('uL').value==='ft'?12:1,mm=v=>defValue(v);
       const values=[['|δ|max',n(mm(d.max.abs))+' '+defUnit()],['ตำแหน่ง x',n(d.max.x/div)+' '+$('uL').value],['δ ยอมให้ ('+(d.mat.absAllowed?'ขนาดที่กำหนด':'L/'+n(d.mat.ratio))+')',n(mm(d.allowed))+' '+defUnit()],['อัตราใช้งาน',n(d.utilization*100)+'%']];
       $('deflectionValues').innerHTML=values.map(([label,v])=>`<div><small>${esc(label)}</small><b>${esc(v)}</b></div>`).join('');
-      $('deflectionResult').textContent=`${d.ok?'ผ่าน':'ไม่ผ่าน'}เกณฑ์ L/${n(d.mat.ratio)} ที่กำหนด · ค่า δ บวกขึ้น / ลบลง · รูปกราฟขยายแนวดิ่งเพื่อให้อ่านได้`;
+      $('deflectionResult').textContent=`${d.ok?'ผ่าน':'ไม่ผ่าน'}เกณฑ์ ${d.mat.absAllowed?n(defValue(d.allowed))+' '+defUnit():'L/'+n(d.mat.ratio)} ที่กำหนด · ค่า δ บวกขึ้น / ลบลง · รูปกราฟขยายแนวดิ่งเพื่อให้อ่านได้`;
       $('deflectionResult').className='check-note '+(d.ok?'is-pass':'is-fail');
       $('deflectionInputSummary').textContent=`E = ${n(d.mat.Einput)} ${d.mat.Eu}; I = ${n(d.mat.Iinput)} ${d.mat.Iu.replace('4','⁴')} · อ้างอิงความยาวคานรวม L`; 
     }
@@ -883,11 +888,12 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
         if(des.table&&!selected&&bestB)rows[rows.length-1]=['ความเค้นดัด',null,'มีหน้าตัดผ่าน bending แต่ไม่มีหน้าตัดแนะนำที่ผ่านทุกเกณฑ์'];
         rows.push(['ความเค้นเฉือน',!des.checkShear?null:(selected?selected.okS:null),!des.checkShear?'เลือกตรวจเฉพาะ bending':selected?`τ = ${n(stressDisplayValue(Number.isFinite(selected.tmax)?selected.tmax:selected.tavg))} ${stressDisplayUnit()} · ยอมให้ ${n(stressDisplayValue(des.ta))} ${stressDisplayUnit()}`:'ไม่มีหน้าตัดแนะนำ; ดูผล shear ของแต่ละหน้าตัดในตาราง']);
       }else{rows.push(['ความเค้นดัด',null,'ยังไม่ได้คำนวณหน้าตัด'],['ความเค้นเฉือน',null,'ยังไม่ได้คำนวณหน้าตัด'])}
+      if(res.Nmax>0)rows.push(['ความเค้นรวมจากแรงตามแนวแกน',null,'ผลออกแบบหน้าตัดตรวจ bending/shear; ใช้เครื่องมือความเค้น ณ จุดเพื่อดู N/A − My/I']);
       rows.push(['การโก่งเดาะ / การบิด',null,'ไม่มีการตรวจ lateral buckling, local buckling และ torsion ในโมเดลนี้']);
       return rows;
     }
     function renderCheckStatus() {
-      const rows=getCheckRows(last),html=rows.map(([title,status,note])=>`<div class="check-row"><span class="check-badge ${status===null?'not-checked':status?'is-pass':'is-fail'}">${status===null?'ยังไม่ตรวจ':status?'ผ่าน':'ไม่ผ่าน'}</span><div><b>${esc(title)}</b><p>${esc(note)}</p></div></div>`).join('');
+      const rows=getCheckRows(last);if(last&&last.res.accuracy)rows.splice(2,0,['ความคลาดเคลื่อนของการแก้สมการ',last.res.accuracy.ok,'ค่าคลาดเคลื่อนสัมพัทธ์สูงสุด = '+detailNumber(last.res.accuracy.relative)+' · ตรวจสมดุลและเงื่อนไขจุดรองรับ']);const html=rows.map(([title,status,note])=>`<div class="check-row"><span class="check-badge ${status===null?'not-checked':status?'is-pass':'is-fail'}">${status===null?'ยังไม่ตรวจ':status?'ผ่าน':'ไม่ผ่าน'}</span><div><b>${esc(title)}</b><p>${esc(note)}</p></div></div>`).join('');
       $('analysisChecks').innerHTML=html;$('designChecks').innerHTML=html;
       const out=[];
       if(last&&last.design&&last.res.deflection){
@@ -1828,6 +1834,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
 
     function rectangleSection(parts){
       if(!parts.length||parts.some(r=>![r.b,r.h,r.y].every(Number.isFinite)||r.b<=0||r.h<=0))throw new Error('ขนาดชิ้นส่วนหน้าตัดต้องมากกว่า 0 และกรอกตำแหน่งให้ครบ');
+      for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++){const a=parts[i],b=parts[j],overlap=Math.min(a.y+a.h/2,b.y+b.h/2)-Math.max(a.y-a.h/2,b.y-b.h/2);if(overlap>64*Number.EPSILON*Math.max(a.h,b.h,Math.abs(a.y),Math.abs(b.y)))throw new Error('ชิ้นส่วนหน้าตัดซ้อนทับกัน: แบ่งเป็นสี่เหลี่ยมที่ไม่ทับพื้นที่');}
       const A=parts.reduce((v,r)=>v+r.b*r.h,0),yc=parts.reduce((v,r)=>v+r.b*r.h*r.y,0)/A;
       const I=parts.reduce((v,r)=>v+r.b*r.h**3/12+r.b*r.h*(r.y-yc)**2,0),top=Math.max(...parts.map(r=>r.y+r.h/2))-yc,bottom=Math.min(...parts.map(r=>r.y-r.h/2))-yc;
       const rects=parts.map(r=>({...r,y:r.y-yc}));
@@ -1885,7 +1892,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
         const p=sectionPoint(model,M,V,y,N),n=detailNumber;
         out.innerHTML=formulaBox('σ(y) = N/A − My/I = '+n(stressDisplayValue(p.sigma))+' '+stressDisplayUnit()+' (ดึง + / อัด −)\nτ(y) = VQ/(Ib) = '+n(stressDisplayValue(p.tau))+' '+stressDisplayUnit()+'\nA = ∫_A dA = '+n(model.A)+' '+UNIT.L+'²\nI = ∫_A η² dA = '+n(model.I)+' '+UNIT.L+'⁴\nQ = '+n(p.Q)+' '+UNIT.L+'³\nb(y) = '+n(p.b)+' '+UNIT.L+'\nτmax = |V| × max(Q/Ib) = '+n(stressDisplayValue(Math.abs(V)*model.peak))+' '+stressDisplayUnit());
         if(model.webHalf){const H=model.webHalf,q0=model.Q(0),qb=model.Q(H-H*1e-7),vweb=V/model.I*(2*H*qb+2*model.tw*H**3/3);out.innerHTML+=formulaBox('h_1 = '+n(2*H)+' '+UNIT.L+'; t_w = '+n(model.tw)+' '+UNIT.L+'\nQ_{joint} = '+n(qb)+' '+UNIT.L+'³\nτ_{web,min} = V Q_{joint}/(I t_w) = '+n(stressDisplayValue(V*qb/(model.I*model.tw)))+' '+stressDisplayUnit()+'\nV_{web} = ∫_{−h_1/2}^{h_1/2} τ(y) t_w dy = V [h_1 Q_{joint} + t_w h_1³/12]/I = '+n(vweb)+' '+UNIT.F+'\nสัดส่วนแรงเฉือนที่ web รับ = V_{web}/V × 100 = '+n(V===0?0:vweb/V*100)+'%');}
-        const elastic=readElastic();if(elastic.mat){const EI=elastic.mat.Epa*model.I*(isUS()?.0254:1)**2/FORCE_N[UNIT.F],curvature=M/EI,epsilon=N/model.A*FORCE_N[UNIT.F]/(isUS()?.0254:1)**2/elastic.mat.Epa-curvature*y;out.innerHTML+=formulaBox('κ = M/(EI) = '+n(curvature)+' '+UNIT.L+'⁻¹\nε(y) = −κy = '+n(epsilon)+' (ไร้หน่วย)');}
+        const elastic=readElastic();if(elastic.mat){const EI=elastic.mat.Epa*model.I*(isUS()?.0254:1)**2/FORCE_N[UNIT.F],curvature=M/EI,epsilon=N/model.A*FORCE_N[UNIT.F]/(isUS()?.0254:1)**2/elastic.mat.Epa-curvature*y;out.innerHTML+=formulaBox('κ = M/(EI) = '+n(curvature)+' '+UNIT.L+'⁻¹\nε(y) = N/(AE) − κy = '+n(epsilon)+' (ไร้หน่วย)');}
       }catch(error){out.textContent=error.message;}
     }
     function capacitySolve(inp,m,selected,includeDeflection=false){
@@ -1931,6 +1938,7 @@ footer>span:first-child{color:#6554c0;font-weight:600;letter-spacing:1px}
     }
 
     $('courseMaterial').addEventListener('change',()=>courseMaterial($('courseMaterial').value));
+    $('exportCSV').addEventListener('click',()=>{if(!last){$('err').hidden=false;$('err').textContent='วิเคราะห์คานก่อนส่งออก';return;}exportBeamCSV()});$('exportJSON').addEventListener('click',exportBeamJSON);
     renderTypes();
     initTheme();
     initBeamFeatures();
